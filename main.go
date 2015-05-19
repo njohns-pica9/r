@@ -4,13 +4,13 @@ package main
 // http://localhost:14000/app
 
 import (
-	"github.com/RangelReale/osin"
+//	"github.com/RangelReale/osin"
 	"github.com/njohns-pica9/cas/storage"
-	"log"
-	"net/http"
-	"net/url"
+//	"log"
+//	"net/http"
+//	"net/url"
 )
 
 func main() {
-
+	_ = storage.NewStorage()
 }
