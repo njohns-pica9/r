@@ -7,7 +7,7 @@
 # you're doing.
 Vagrant.configure(2) do |config|
   config.vm.box = "trusty64"
-  config.vm.network "forwarded_port", guest: 8080, host: 8080
+  config.vm.network "forwarded_port", guest: 8080, host: 28000
   config.vm.network "forwarded_port", guest: 28015, host: 28015
   config.vm.network "private_network", ip: "192.168.33.10"
   config.vm.synced_folder "./data", "/vagrant_data", type: "nfs"

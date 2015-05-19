@@ -4,13 +4,19 @@ package main
 // http://localhost:14000/app
 
 import (
-//	"github.com/RangelReale/osin"
+	// "github.com/RangelReale/osin"
 	"github.com/njohns-pica9/cas/storage"
-//	"log"
-//	"net/http"
-//	"net/url"
+	//	"log"
+	//	"net/http"
+	//	"net/url"
 )
 
+var rstore *storage.Restorage
+
 func main() {
-	_ = storage.NewStorage()
+	rstore = storage.NewStorage()
+
+	initServer()
+
+	rstore.Close()
 }

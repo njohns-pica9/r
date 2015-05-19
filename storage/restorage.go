@@ -19,7 +19,10 @@ type reclient struct {
 
 func NewStorage() *Restorage {
 	session, err := r.Connect(r.ConnectOpts{
-		Address: "localhost:28015",
+		Address:  "localhost:28015",
+		Database: "auth",
+		MaxIdle:  10,
+		MaxOpen:  10,
 	})
 
 	if err != nil {
@@ -31,8 +34,16 @@ func NewStorage() *Restorage {
 	}
 }
 
-func (s *Restorage) Clone() Restorage {
-	return *s
+func (s *Restorage) Reconnect() {
+	err := s.session.Reconnect()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (s *Restorage) Clone() osin.Storage {
+	return s
 }
 
 func (s *Restorage) Close() {
@@ -42,114 +53,158 @@ func (s *Restorage) Close() {
 	}
 }
 
-func (s *Restorage) GetClient(id string) (Client, error) {
+func (s *Restorage) GetClient(id string) (osin.Client, error) {
+	s.Reconnect()
+
 	var client Client
 
-	cursor, err := r.Table("clients").
+	cursor, err := r.Db("auth").Table("clients").
 		GetAllByIndex("client_id", id).
 		Limit(1).
 		Run(s.session)
 
+	log.Printf("Session: %v\n", s.session)
+
 	if err != nil {
+		log.Println(err)
 		return client, err
 	}
 
 	cursor.Next(&client)
 
+	log.Printf("GetClient: %v\n", client)
+
 	return client, nil
 }
 
 func (s *Restorage) SaveAuthorize(data *osin.AuthorizeData) error {
-	_, err := r.Table("client_authorizations").Insert(data).RunWrite(s.session)
+	s.Reconnect()
+
+	redata := convertToAuthorizeData(data)
+
+	_, err := r.Db("auth").Table("client_authorizations").Insert(redata).RunWrite(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
+	log.Printf("SaveAuthorize: %v\n", data)
 
 	return nil
 }
 
 func (s *Restorage) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
-	var authroize_data osin.AuthorizeData
+	s.Reconnect()
 
-	cursor, err := r.Table("client_authorizations").
+	var authroize_data AuthorizeData
+
+	cursor, err := r.Db("auth").Table("client_authorizations").
 		GetAllByIndex("code", code).
 		Limit(1).
 		Run(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	cursor.Next(&authroize_data)
 
-	return &authroize_data, nil
+	log.Printf("LoadAuthorize: %v\n", authroize_data)
+
+	return convertFromAuthorizeData(&authroize_data), nil
 }
 
 func (s *Restorage) RemoveAuthorize(code string) error {
-	_, err := r.Table("client_authorizations").
+	s.Reconnect()
+
+	_, err := r.Db("auth").Table("client_authorizations").
 		GetAllByIndex("code", code).
 		Limit(1).
 		Delete().
 		RunWrite(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
+	log.Printf("RemoveAuthorize: %v\n", code)
 
 	return nil
 }
 
 func (s *Restorage) SaveAccess(data *osin.AccessData) error {
-	_, err := r.Table("client_access").Insert(data).RunWrite(s.session)
+	s.Reconnect()
+
+	redata := convertToAccessData(data)
+
+	_, err := r.Db("auth").Table("client_access").Insert(redata).RunWrite(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
+	log.Printf("SaveAccess: %v\n", data)
 
 	return nil
 }
 
 func (s *Restorage) LoadAccess(code string) (*osin.AccessData, error) {
-	var access_data osin.AccessData
+	s.Reconnect()
 
-	cursor, err := r.Table("client_access").
+	var access_data AccessData
+
+	cursor, err := r.Db("auth").Table("client_access").
 		GetAllByIndex("access_token", code).
 		Limit(1).
 		Run(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	cursor.Next(&access_data)
 
-	return &access_data, nil
+	log.Printf("LoadAccess: %v\n", access_data)
+
+	return convertFromAccessData(&access_data), nil
 }
 
 func (s *Restorage) RemoveAccess(code string) error {
-	_, err := r.Table("client_access").
+	s.Reconnect()
+
+	_, err := r.Db("auth").Table("client_access").
 		GetAllByIndex("access_token", code).
 		Limit(1).
 		Delete().
 		RunWrite(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
+	log.Printf("RemoveAccess: %v\n", code)
 
 	return nil
 }
 
 func (s *Restorage) LoadRefresh(code string) (*osin.AccessData, error) {
+	s.Reconnect()
+
 	var access_data osin.AccessData
 
-	cursor, err := r.Table("client_access").
+	cursor, err := r.Db("auth").Table("client_access").
 		GetAllByIndex("refresh_token", code).
 		Limit(1).
 		Run(s.session)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -159,7 +214,9 @@ func (s *Restorage) LoadRefresh(code string) (*osin.AccessData, error) {
 }
 
 func (s *Restorage) RemoveRefresh(code string) error {
-	_, err := r.Table("client_access").
+	s.Reconnect()
+
+	_, err := r.Db("auth").Table("client_access").
 		GetAllByIndex("refresh_token", code).
 		Limit(1).
 		Delete().

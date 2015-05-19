@@ -35,9 +35,9 @@ func (s *Restorage) initTables() {
 
 func (s *Restorage) initIndexes() {
 	indexes := map[string]string{
-		"client_id": "clients",
-		"code": "client_authorizations",
-		"access_token": "client_access",
+		"client_id":     "clients",
+		"code":          "client_authorizations",
+		"access_token":  "client_access",
 		"refresh_token": "client_access",
 	}
 

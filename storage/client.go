@@ -1,9 +1,26 @@
 package storage
 
-import "github.com/RangelReale/osin"
-
 type Client struct {
-	osin.Client
+	Id          string      `gorethink:"client_id"`
+	Secret      string      `gorethink:"client_secret"`
+	RedirectUri string      `gorethink:"redirect_uri"`
+	UserData    interface{} `gorethink:"user_data"`
+}
+
+func (c Client) GetId() string {
+	return c.Id
+}
+
+func (c Client) GetSecret() string {
+	return c.Secret
+}
+
+func (c Client) GetRedirectUri() string {
+	return c.RedirectUri
+}
+
+func (c Client) GetUserData() interface{} {
+	return c.UserData
 }
 
 func (c Client) FieldMap() map[string]string {
